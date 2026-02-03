@@ -384,3 +384,5 @@ Assembly-CSharp-Editor.csproj
 Assembly-CSharp.csproj
 .vsconfig
 Retr0-URP-Kulka-Lekcje.sln
+/_BuildAndroid
+/_CleanBuild
