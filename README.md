@@ -5,6 +5,10 @@
 It started as a simple project to teach my friend how to make a game in Unity. It was a great experience for both of us, me as the teacher and my friend as the learner.
 This version of the game is fully made by me. I used it as an example project to demonstrate mechanics that he could later try to implement on his own.
 
+### You can download it here:
+<b>Link to GameJolt:</b>
+https://gamejolt.com/games/Sphere_Parcour_Game/881305
+
 ## Pictures:
 <img width="2559" height="1439" alt="Zrzut ekranu 2026-01-22 005403" src="https://github.com/user-attachments/assets/1fae5fc7-b3d8-4f84-ad0d-1c0bbafe26f8" />
 <img width="2558" height="1439" alt="Zrzut ekranu 2026-01-22 005251" src="https://github.com/user-attachments/assets/810c212e-6966-498f-b5ef-0c69d742c6e6" />
@@ -36,7 +40,3 @@ This version of the game is fully made by me. I used it as an example project to
 - Main menu with a 3D interface.
 - 5 levels.
 - Automaticly saving game progress.
-
-
-### Link to GameJolt:
-https://gamejolt.com/games/Sphere_Parcour_Game/881305
