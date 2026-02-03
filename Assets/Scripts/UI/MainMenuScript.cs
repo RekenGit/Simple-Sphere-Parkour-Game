@@ -1,5 +1,4 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -9,6 +8,9 @@ public class MainMenuScript : MonoBehaviour
     [SerializeField] private Transform levelSelectPanel;
     [SerializeField] private GameObject levelButtonPrefab;
     [SerializeField] private GameObject cheatsGO;
+    [SerializeField] private GameObject testLevelButton;
+    [SerializeField] private AudioSource audioSourceStart;
+    [SerializeField] private AudioSource audioSourceLoop;
     static bool isCheatsOn = false;
     private int page = 0;
     private int lastActiveLevel = 1;
@@ -23,6 +25,17 @@ public class MainMenuScript : MonoBehaviour
         if (isCheatsOn)
             lastActiveLevel = 100;
         StartCoroutine(CreateLevelButtons());
+        testLevelButton.SetActive(false);
+    }
+
+    private void Update()
+    {
+        if (audioSourceLoop.isPlaying) return;
+        if (!audioSourceStart.isPlaying)
+        {
+            audioSourceStart.enabled = false;
+            audioSourceLoop.Play();
+        }
     }
 
     public void CheatsOn()
@@ -30,10 +43,16 @@ public class MainMenuScript : MonoBehaviour
         cheatsGO.GetComponent<Image>().color = Color.red;
         isCheatsOn = true;
         lastActiveLevel = 100;
+        testLevelButton.SetActive(true);
         StartCoroutine(CreateLevelButtons());
     }
 
+    public void LoadTestLevel() => GameManager.Instance.LoadLevel("Level0");
+    public void QuitGame() => Application.Quit();
+
     public void MoveToLevelPick(bool value) => animator.SetBool("IsInLvlPick", value);
+    public void MoveToSettings(bool value) => animator.SetBool("IsInSettings", value);
+    public void MoveToPlayerCustomization(bool value) => animator.SetBool("IsInPlayerCustom", value);
 
     public void ChangePage(bool addPage = true)
     {
@@ -54,7 +73,9 @@ public class MainMenuScript : MonoBehaviour
             if (i < firstPage + 10)
             {
                 GameObject button = Instantiate(levelButtonPrefab);
-                button.GetComponent<ButtonLevelSelect>().LevelNumber = i;
+                ButtonLevelSelect buttonLevelSelect = button.GetComponent<ButtonLevelSelect>();
+                buttonLevelSelect.LevelNumber = i;
+                buttonLevelSelect.RecordTime = PlayerPrefs.GetFloat("Level" + i + "_TimeRecord");
                 button.transform.SetParent(levelSelectPanel);
                 bool posFirstRow = rowCell < 5;
                 button.transform.localPosition = new Vector3(xCorginates[posFirstRow ? rowCell : rowCell - 5], (posFirstRow ? 1f : -1f), 0f);

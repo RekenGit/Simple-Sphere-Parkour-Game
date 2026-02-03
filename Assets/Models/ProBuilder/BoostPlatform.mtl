@@ -1,0 +1,8 @@
+newmtl Brown
+Kd 0.6117647 0.2627451 0.2627451
+d 1
+
+newmtl Glow-Low-Yellow
+Kd 0.9875138 1 0.3632075
+d 1
+

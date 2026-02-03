@@ -12,13 +12,18 @@ public class TriggerPlatforms : MonoBehaviour
     private bool isActive = true;
 
     //Disolve
+    [SerializeField] private AudioClip audioClip; //+Button
     [SerializeField] private float timeToDisapear = 1;
     [SerializeField] private float timeToApear = 4;
     [SerializeField] private GameObject objectToDisapear;
 
     //Button
+    [SerializeField] private bool restartOnPlayerDeath;
     [SerializeField] private bool isToggle;
+    [SerializeField] private bool canDeactivateOnExit;
     [SerializeField] private List<GameObject> targetObjects;
+    private Animator animator;
+    private AudioSource audioSource;
 
     public enum TriggerType
     {
@@ -29,11 +34,47 @@ public class TriggerPlatforms : MonoBehaviour
         LevelEnd,
     }
 
+    private void OnDrawGizmos()
+    {
+        if (triggerType == TriggerType.Button)
+        {
+            Gizmos.color = new(0f, 1f, 1f, 0.4f);
+            foreach (GameObject _object in targetObjects)
+                Gizmos.DrawLine(transform.position, _object.transform.position);
+        }
+        else if (triggerType == TriggerType.JumpBoost)
+        {
+            Gizmos.color = new(1f, 1f, 0f, 0.2f);
+            Gizmos.DrawSphere(transform.position, 15.5f);
+        }
+        else if (triggerType == TriggerType.SpeedBoost)
+        {
+            Gizmos.color = new(0f, 0.5f, 1f, 0.2f);
+            Gizmos.matrix = this.transform.localToWorldMatrix;
+            Gizmos.DrawCube(Vector3.zero, new Vector3(38.5f, 2.2f, 38.5f));
+        }
+    }
+
     void Start()
     {
         playerScript = GameObject.FindGameObjectWithTag("Player").GetComponent<PlayerMovement>();
         if (objectToDisapear != null ) objectMaterial = objectToDisapear.GetComponent<Renderer>().material;
-        if (triggerType == TriggerType.DisolveFloor) isActive = false;
+        if (triggerType == TriggerType.DisolveFloor || triggerType == TriggerType.Button || triggerType == TriggerType.LevelEnd)
+        {
+            if (audioClip != null)
+            {
+                audioSource = GetComponent<AudioSource>();
+                audioSource.clip = audioClip;
+            }
+
+            if (triggerType == TriggerType.DisolveFloor) 
+                isActive = false;
+            else if (triggerType == TriggerType.Button)
+            {
+                playerScript.playerDied.AddListener(OnPlayerDeath);
+                animator = GetComponent<Animator>();
+            }
+        }
     }
 
     private void OnTriggerEnter(Collider other)
@@ -41,30 +82,38 @@ public class TriggerPlatforms : MonoBehaviour
         switch (triggerType)
         {
             case TriggerType.JumpBoost:
-                other.GetComponent<PlayerMovement>().isOnJumpBoost = true;
+                playerScript.isOnJumpBoost = true;
                 break;
 
             case TriggerType.SpeedBoost:
-                other.GetComponent<PlayerMovement>().isOnSpeedBoost = true;
+                playerScript.isOnSpeedBoost = true;
                 break;
 
             case TriggerType.DisolveFloor:
-                if (!isActive) StartCoroutine(Dissolve());
+                if (!isActive)
+                {
+                    if (audioClip != null)
+                        audioSource.Play();
+                    StartCoroutine(Dissolve());
+                }
                 break;
 
             case TriggerType.Button:
-                GetComponent<Animator>().SetBool("IsPressed", true);
+                if (animator != null)
+                    animator.SetBool("IsPressed", true);
+                else
+                    GetComponent<Collider>().enabled = false;
+                if (audioClip != null)
+                    audioSource.Play();
                 foreach (GameObject _object in targetObjects)
                 {
-                    if (isToggle) _object.GetComponent<IInteractibleObiects>().ObiectToggle();
-                    else _object.GetComponent<IInteractibleObiects>().ObiectInteract();
+                    if (isToggle) _object.GetComponent<IInteractibleObiects>()?.ObiectToggle();
+                    else _object.GetComponent<IInteractibleObiects>()?.ObiectInteract();
                 }
                 break;
 
             case TriggerType.LevelEnd:
-                int actualLevel = Int32.Parse(SceneManager.GetActiveScene().name.Replace("Level", ""));
-                if (PlayerPrefs.GetInt("LastSavedLevel") < actualLevel) PlayerPrefs.SetInt("LastSavedLevel", actualLevel + 1);
-                SceneManager.LoadScene("Lobby");
+                FinishLevel();
                 break;
         }
     }
@@ -74,12 +123,39 @@ public class TriggerPlatforms : MonoBehaviour
         switch (triggerType)
         {
             case TriggerType.JumpBoost:
-                other.GetComponent<PlayerMovement>().isOnJumpBoost = false;
+                playerScript.isOnJumpBoost = false;
                 break;
 
             case TriggerType.SpeedBoost:
-                other.GetComponent<PlayerMovement>().isOnSpeedBoost = false;
+                playerScript.isOnSpeedBoost = false;
                 break;
+
+            case TriggerType.Button:
+                if (canDeactivateOnExit)
+                {
+                    if (animator != null)
+                        animator.SetBool("IsPressed", false);
+                    else
+                        GetComponent<Collider>().enabled = true;
+                    foreach (GameObject _object in targetObjects)
+                        _object.GetComponent<IInteractibleObiects>()?.ObiectRestart();
+                }
+                break;
+        }
+    }
+
+    private void OnPlayerDeath()
+    {
+        if (!restartOnPlayerDeath) return;
+
+        if (triggerType == TriggerType.Button)
+        {
+            if (animator != null)
+                animator.SetBool("IsPressed", false);
+            else
+                GetComponent<Collider>().enabled = true;
+            foreach (GameObject _object in targetObjects)
+                _object.GetComponent<IInteractibleObiects>()?.ObiectRestart();
         }
     }
 
@@ -115,6 +191,19 @@ public class TriggerPlatforms : MonoBehaviour
             yield return null;
         }
         isActive = false;
+    }
+    #endregion
+    #region LevelEnd
+    private void FinishLevel()
+    {
+        audioSource.Play();
+        int actualLevel = Int32.Parse(SceneManager.GetActiveScene().name.Replace("Level", ""));
+        Debug.Log("Finished Level: " + actualLevel);
+        if (PlayerPrefs.GetInt("LastSavedLevel") <= actualLevel)
+            PlayerPrefs.SetInt("LastSavedLevel", actualLevel + 1);
+
+        GameManager.Instance.FinishedLevelSuccessfully();
+        GameManager.Instance.LoadLevel("Level" + (actualLevel + 1));
     }
     #endregion
 }

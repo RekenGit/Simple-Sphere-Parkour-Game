@@ -2,4 +2,5 @@
 {
     void ObiectInteract();
     void ObiectToggle();
+    void ObiectRestart();
 }

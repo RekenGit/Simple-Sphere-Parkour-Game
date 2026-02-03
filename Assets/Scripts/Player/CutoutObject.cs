@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -12,11 +11,15 @@ public class CutoutObject : MonoBehaviour
     private void Awake()
     {
         mainCamera = GetComponent<Camera>();
+        seeThroTarget = GameObject.FindWithTag("Player").transform;
+        Debug.Assert(mainCamera != null, "CutoutObject script must be attached to a Camera object.");
+        Debug.Assert(seeThroTarget != null, "CutoutObject script couldnt find objest named \"Player\".");
     }
 
     private List<RaycastHit> lastHitObjects = new();
     void Update()
     {
+        //if (seeThroTarget == null) return;
         Vector3 offset = seeThroTarget.position - transform.position;
         List<RaycastHit> hitObjects = Physics.RaycastAll(transform.position, offset, offset.magnitude, seeThroLayer).ToList();
 
@@ -46,7 +49,7 @@ public class CutoutObject : MonoBehaviour
             foreach (Material material in materials)
             {
                 material.SetVector("_CutoutPos", cutoutPos);
-                material.SetFloat("_CutoutSize", .06f);
+                material.SetFloat("_CutoutSize", .1f);
             }
         }
 
